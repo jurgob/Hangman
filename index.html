@@ -1,0 +1,248 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head>
+<title>Hangman</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="./jquery.min.js"></script>
+<script >
+  var HangmanStatus = {
+    'INIT': 'INIT',
+    'INPROGRESS': 'INPROGRESS',
+    'WON': 'WON',
+    'LOST': 'LOST'
+  }
+  Object.freeze(HangmanStatus);
+
+  var HangmanGame = {
+    word2Guess: "cestil",
+    get word2GuessVisible(){
+      var self = this;
+      return Array.prototype.map.call(
+        self.word2Guess,
+        function(letter){
+          return (self.letterAttempted.indexOf(letter) !== -1   ? letter : "_"  )
+        }
+      ).join('')
+    },
+    get alphabetVisible(){
+      var self = this;
+      return Array.prototype.map.call(
+        self.alphabet,
+        function(letter){
+          return (self.letterAttempted.indexOf(letter) === -1   ? letter : "_"  )
+        }
+      ).join('')
+    },
+    letterAttempted:"",
+    attemps:[],
+    get wrongAttemps (){
+        var self = this;
+        return Array.prototype.filter.call(
+          self.letterAttempted,
+          function(letter){
+            return(self.word2Guess.indexOf(letter) === -1 )
+          }
+        )||"";
+    },
+    get goodAttemps (){
+        var self = this;
+        return Array.prototype.forEach.call(
+          self.letterAttempted,
+          function(letter){
+            return ( self.word2Guess.indexOf(letter) !== -1  )
+          }
+        )||"";
+    },
+    wrongAttempsMax:6,
+    alphabet: "abcdefghilmnopqrstuvwxyz",
+    get status (){
+      var res = HangmanStatus.INPROGRESS
+      if(this.gameLost()) res = HangmanStatus.LOST
+      else if(this.gameWon()) res = HangmanStatus.WON
+
+      return res;
+    },
+    init: function(){
+      // this.status = HangmanStatus.INPROGRESS;
+      this.callbacks.gameReady();
+    },
+    play: function(letter){
+      letter = letter[0];
+      if(this.status === HangmanStatus.WON || this.status === HangmanStatus.LOST   || this.letterAttempted.indexOf(letter) !== -1  )
+        return;
+
+      this.letterAttempted += letter;
+      var attempResult = ( this.word2Guess.indexOf(letter)  !== -1  )
+      this.callbacks.play(attempResult);
+      if(this.gameLost() || this.gameWon() ){
+        if(this.gameLost()){
+          this.callbacks.gameLost();
+        }
+        else if(this.gameWon())  {
+            this.callbacks.gameWon();
+        }
+
+      }
+    },
+    gameWon: function(){
+
+      // var wordGuessed = (this.goodAttemps.length >= this.word2Guess.length);
+      return ( this.word2GuessVisible ===   this.word2Guess )
+    },
+    gameLost: function(){
+      var maxWrongAttempsReached = (this.wrongAttemps.length >= this.wrongAttempsMax);
+      return maxWrongAttempsReached;
+    },
+    callbacks:{
+      gameWon: function(){
+        console.log('gameWonCallback')
+      },
+      gameLost:function(){
+        console.log('gameLostCallback')
+      },
+      play: function(attempResult){
+        console.log('playCallback '+attempResult)
+      },
+      gameReady:  function(){
+        console.log('########## initCallback')
+      }
+    }
+  }
+
+  var PaintGame = function(cont$){
+
+    var self = this;
+
+    this.listener = function(hmGame){
+      cont$.find('.alphabet>.letter.enabled').click(function(){
+          hmGame.play($(this).text().trim());
+          self.render(hmGame);
+      })
+    }
+
+    var renderAlphabetVisible = function(alphabet){
+      // var self$ = $(this);
+      return alphabet
+        .split('')
+        .map(function(letter){
+          var elClasses = 'letter ' + ( (letter === '_') ? 'disabled' : 'enabled'  );
+          var elStr = '<span class="'+elClasses+'" >'+letter+'  </span>'
+          return elStr;
+        })
+        .join('');
+    }
+
+    this.render = function (hmGame){
+      console.log('renderAlphabetVisible', renderAlphabetVisible(hmGame.alphabetVisible))
+
+      cont$.find('.alphabet').html(renderAlphabetVisible(hmGame.alphabetVisible))
+      cont$.find('.word2Guess').html(hmGame.word2GuessVisible);
+      cont$.find('.wrongAttemps .counter').html(hmGame.wrongAttemps.length)
+      cont$.find('.hangman > div').slice(0, hmGame.wrongAttemps.length).show();
+      cont$.find('.gameStatus').html(hmGame.status);
+      this.listener(hmGame);
+    }
+  }
+
+  var BotGame = function(HGGame, gameUI){
+    var botGameMoves = "acddstmnfile"
+    var botGameMovesHistory = ""
+    var self = this;
+    this.playGame = function(){
+      gameUI.render(HGGame);
+      setTimeout(function(){
+        var nextMove = botGameMoves[botGameMovesHistory.length];
+        if(nextMove){
+          self.doGameMove(nextMove);
+          self.playGame();
+        }
+      }, 1000)
+    }
+    this.doGameMove = function(move){
+      HGGame.play(move);
+      botGameMovesHistory += move;
+      gameUI.render(HGGame)
+    }
+  }
+
+
+
+
+  $(document).ready(function(){
+    var myGame = Object.create(HangmanGame);
+    var gameUI = new PaintGame($('.hangmanCont'))
+    gameUI.render(myGame)
+
+    // var fakeGame = new BotGame(myGame, gameUI);
+    // fakeGame.playGame();
+
+  });
+
+</script>
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+
+<style type="text/css" >
+  body{
+  }
+
+  .hangman{
+    width: 30px;
+    /*height: 200px;*/
+    border: 1px solid black;
+  }
+  .hangman div{
+    float: left;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    height: 30px;
+    display:none;
+  }
+  .hangman .hangman_1{
+    width: 100%;
+  }
+  .hangman .hangman_2, .hangman .hangman_3, .hangman .hangman_4{
+    width: 33%;
+  }
+  .hangman .hangman_5, .hangman .hangman_6{
+    width: 50%;
+  }
+
+
+</style>
+
+
+</head>
+
+<body>
+
+<div class="hangmanCont" >
+  <div  class="alphabet" ></div>
+  <div  class="word2Guess" ></div>
+  <div  class="gameStatus" ></div>
+  <div  class="wrongAttemps" >
+    <span>wrong attemps: </span><span class="counter" ></span>
+  </div>
+  <div  style="clear:block; " >
+  ------------------------
+  </div>
+  <div  class="hangman" >
+    <div class="hangman_1" >O</div>
+    <div class="hangman_2" >/</div>
+    <div class="hangman_3" >|</div>
+    <div class="hangman_4" >\</div>
+    <div class="hangman_5" >/</div>
+    <div class="hangman_6" >\</div>
+  </div>
+
+
+  <form id="hangmanForm" name="hangmanForm" >
+
+  </form>
+</div>
+
+</body>
+</html>
