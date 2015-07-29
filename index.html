@@ -37,24 +37,23 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
       ).join('')
     },
     letterAttempted:"",
-    attemps:[],
     get wrongAttemps (){
-        var self = this;
-        return Array.prototype.filter.call(
-          self.letterAttempted,
-          function(letter){
-            return(self.word2Guess.indexOf(letter) === -1 )
-          }
-        )||"";
+      var self = this;
+      return Array.prototype.filter.call(
+        self.letterAttempted,
+        function(letter){
+          return(self.word2Guess.indexOf(letter) === -1 )
+        }
+      ).join('');
     },
     get goodAttemps (){
-        var self = this;
-        return Array.prototype.forEach.call(
-          self.letterAttempted,
-          function(letter){
-            return ( self.word2Guess.indexOf(letter) !== -1  )
-          }
-        )||"";
+      var self = this;
+      return Array.prototype.forEach.call(
+        self.letterAttempted,
+        function(letter){
+          return ( self.word2Guess.indexOf(letter) !== -1  )
+        }
+      ).join('');
     },
     wrongAttempsMax:6,
     alphabet: "abcdefghilmnopqrstuvwxyz",
@@ -113,7 +112,6 @@ PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   }
 
   var PaintGame = function(cont$){
-
     var self = this;
 
     this.listener = function(hmGame){
