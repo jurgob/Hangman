@@ -53,3 +53,5 @@ exports.postMove = function(req, res) {
         res.json(game);
       });
   });
+
+};

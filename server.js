@@ -42,5 +42,7 @@ router.route('/games/:game_id/moves/:move')
 
 app.use('/api',router);
 
+app.use('/', express.static(__dirname + '/public'));
+
 // Start the server
 app.listen(4000);
